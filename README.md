@@ -2,8 +2,6 @@
 
 This sample shows how to build a card form to take a payment using the [Payment Intents API](), [Dots Elements]() and [React](https://reactjs.org/).
 
-<img src="./demo.png" alt="Preview of recipe" align="center">
-
 ## Features
 
 This sample consists of a `client` in React and a `server` piece.
