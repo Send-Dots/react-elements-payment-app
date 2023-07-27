@@ -30,11 +30,12 @@ export default function CheckoutForm() {
     // // to confirm payment with dots.confirmCardPayment()
     try {
       const clientSecret = await api.createPaymentIntent(amount); //create a card charge of 96 dollar
-
+      console.log(data);
       const payload = await dots.confirmCardPayment(clientSecret, {
         payment_method: {
           element: elements?.getElement('payment')!,
           billing_details: {
+            name: data.name, // not required
             address: {
               country: data.country,
               zip: data.zip,
@@ -109,6 +110,13 @@ export default function CheckoutForm() {
         <PaymentElement options={fieldOptions} />
         <div className="sr-combo-inputs">
           <div className="sr-combo-inputs-row">
+            <input
+              type="text"
+              placeholder="Full Name"
+              autoComplete="name"
+              className="sr-input"
+              {...register('name', { required: true })}
+            />
             <input
               type="text"
               placeholder="12345"
