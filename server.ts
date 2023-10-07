@@ -45,6 +45,69 @@ app.post('/create-payment-intent', async (req, res) => {
   res.json(response.data);
 });
 
+app.post('/confirm-payment-intent', async (req, res) => {
+  const body = req.body;
+
+  const response = await axios.post(
+    process.env.DOTS_API_URL +
+      '/v2/payment-intents/' +
+      body.paymentIntentId +
+      '/confirm',
+    {
+      payment_method_id: body.paymentMethodId,
+    },
+    {
+      withCredentials: true,
+      auth: {
+        username: process.env.DOTS_CLIENT_ID,
+        password: process.env.DOTS_CLIENT_SECRET,
+      },
+    }
+  );
+  res.json(response.data);
+});
+
+app.post('/attach-payment-method', async (req, res) => {
+  const body = req.body;
+
+  const response = await axios.post(
+    process.env.DOTS_API_URL +
+      '/v2/payment-methods/' +
+      body.paymentMethodId +
+      '/attach',
+    {
+      customer_id: body.customerId,
+    },
+    {
+      withCredentials: true,
+      auth: {
+        username: process.env.DOTS_CLIENT_ID,
+        password: process.env.DOTS_CLIENT_SECRET,
+      },
+    }
+  );
+  res.json(response.data);
+});
+
+app.post('/create-payment-customer', async (req, res) => {
+  const body = req.body;
+
+  const response = await axios.post(
+    process.env.DOTS_API_URL + '/v2/payment-customers/',
+    {
+      country_code: body.countryCode,
+    },
+    {
+      withCredentials: true,
+      auth: {
+        username: process.env.DOTS_CLIENT_ID,
+        password: process.env.DOTS_CLIENT_SECRET,
+      },
+    }
+  );
+  res.json(response.data);
+});
+
 console.log('PORT', PORT);
 
 app.listen(PORT, () => console.log(`Node server listening on port ${PORT}!`));

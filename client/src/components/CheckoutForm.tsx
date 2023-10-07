@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+
 import { PaymentElement, useDots, useElements } from '@dots.dev/react-dots-js';
 import './CheckoutForm.css';
 import api from '../api';
@@ -10,6 +11,10 @@ export default function CheckoutForm() {
   const [metadata, setMetadata] = useState<any | null>();
   const [succeeded, setSucceeded] = useState(false);
   const [processing, setProcessing] = useState(false);
+
+  const clientConfirmPayment = false;
+  const savePaymentMethod = true;
+
   const dots = useDots();
   const amount = 9600;
   const elements = useElements();
@@ -26,23 +31,50 @@ export default function CheckoutForm() {
     if (!dots || !elements) return;
     setProcessing(true);
 
+    let payload;
+
     // // Step 3: Use clientSecret from PaymentIntent and the CardElement
     // // to confirm payment with dots.confirmCardPayment()
     try {
-      const clientSecret = await api.createPaymentIntent(amount); //create a card charge of 96 dollar
-      console.log(data);
-      const payload = await dots.confirmCardPayment(clientSecret, {
-        payment_method: {
-          element: elements?.getElement('payment')!,
-          billing_details: {
-            name: data.name, // not required
-            address: {
-              country: data.country,
-              zip: data.zip,
+      const { client_secret: clientSecret, id: paymentIntentId } =
+        await api.createPaymentIntent(amount); //create a card charge of 96 dollar
+
+      if (clientConfirmPayment) {
+        payload = await dots.confirmCardPayment(clientSecret, {
+          payment_method: {
+            element: elements?.getElement('payment')!,
+            billing_details: {
+              name: data.name, // not required
+              address: {
+                country: data.country,
+                zip: data.zip,
+              },
             },
           },
-        },
-      });
+        });
+      } else {
+        const paymentMethod = await dots?.addPaymentMethod({
+          payment_method: {
+            element: elements?.getElement('payment')!,
+            billing_details: {
+              name: data.name, // not required
+              address: {
+                country: data.country,
+                zip: data.zip,
+              },
+            },
+          },
+        });
+
+        if (savePaymentMethod)
+          await savePaymentMethodToCustomer(paymentMethod.id, data.country);
+
+        payload = await api.confirmPaymentIntent(
+          paymentIntentId,
+          paymentMethod.id
+        );
+      }
+
       setSucceeded(true);
       setMetadata(payload);
     } catch (error: any) {
@@ -50,6 +82,15 @@ export default function CheckoutForm() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const savePaymentMethodToCustomer = async (
+    paymentMethodId: string,
+    country: string
+  ) => {
+    const paymentCustomer = await api.createPaymentCustomer(country);
+
+    await api.attachPaymentMethod(paymentMethodId, paymentCustomer.id);
   };
 
   const renderSuccess = () => {
@@ -85,6 +126,8 @@ export default function CheckoutForm() {
           color: '#32325d',
           fontWeight: '400',
           fontSize: '16px',
+          colorPrimaryText: '#32325d',
+          colorIcon: '#32325d',
         },
         invalid: {
           ':hover': {
@@ -107,6 +150,7 @@ export default function CheckoutForm() {
           })}{' '}
         </h1>
         <br />
+
         <PaymentElement options={fieldOptions} />
         <div className="sr-combo-inputs">
           <div className="sr-combo-inputs-row">
